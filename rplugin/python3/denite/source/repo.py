@@ -111,6 +111,7 @@ class Repo():
         self.vim = vim
         self.path = os.path.normpath(folder)
         self.name = os.path.basename(self.path)
+        self.logs = []
         self.branch = ''
         self.branchInfo = ''
         self.actionInfo = ''
@@ -165,10 +166,6 @@ class Repo():
 
         stdout, stderr = process.communicate()
 
-        if process.returncode:
-            debug(self.vim, stderr.join("\n"))
-            error(self.vim, 'Git exited with error when called: ' + ' '.join(command))
-
         stdout = str(stdout).split('\n')
         if stdout[-1] is '':
             stdout.pop()
@@ -176,6 +173,15 @@ class Repo():
         stderr = str(stderr).split('\n')
         if stderr[-1] is '':
             stderr.pop()
+
+        if process.returncode:
+            self.logs.append('----- command: '+ (' '.join(command + args)))
+            if len(stdout):
+                self.logs.append('stdout:')
+                self.logs.extend(stdout)
+            if len(stderr):
+                self.logs.append('stderr:')
+                self.logs.extend(stderr)
 
         return {
             'exitCode': process.returncode,

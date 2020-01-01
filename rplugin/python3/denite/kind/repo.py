@@ -9,7 +9,7 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch', 'rebase' ]
+        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log' ]
         self.redraw_actions = [ 'fetch', 'rebase' ]
 
     def action_open(self, context):
@@ -32,6 +32,10 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.rebase()
+
+    def action_show_log(self, context):
+        for target in context['targets']:
+            debug(self.vim, '\n'.join(target['action__repo'].logs))
 
 class RepoAction():
     def __init__(self, repo, vim):
