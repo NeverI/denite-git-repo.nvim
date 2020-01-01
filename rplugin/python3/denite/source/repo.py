@@ -16,6 +16,8 @@ class Source(Base):
         {'name': 'repo', 'link': 'Operator', 'pattern': r'\zs[a-zA-Z0-9_\-]\+\ze\s\?', 'next': 'action'},
         {'name': 'action', 'link': 'Identifier', 'pattern': r'.\+$'},
         {'name': 'status', 'link': 'Constant', 'parent': 'action', 'pattern': r': \zs.\+$'},
+        {'name': 'statusFailed', 'link': 'Exception', 'parent': 'status', 'pattern': r'Failed$'},
+        {'name': 'statusSuccess', 'link': 'String', 'parent': 'status', 'pattern': r'Success$'},
     ]
 
     def __init__(self, vim):
