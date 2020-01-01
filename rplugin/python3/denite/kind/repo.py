@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push' ]
-        self.redraw_actions = [ 'fetch', 'rebase', 'push' ]
+        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop' ]
+        self.redraw_actions = [ 'fetch', 'rebase', 'push', 'stash', 'stash_pop' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -41,6 +41,16 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.push()
+
+    def action_stash(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.stash()
+
+    def action_stash_pop(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.stashPop()
 
 class RepoAction():
     def __init__(self, repo, vim):
@@ -88,6 +98,28 @@ class RepoAction():
     def push(self):
         result = self.repo._runGit(['push'])
         self.repo.actionInfo = 'Push: '
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
+
+    def stash(self):
+        result = self.repo._runGit(['stash'])
+        self.repo.actionInfo = 'Stash: '
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
+
+    def stashPop(self):
+        result = self.repo._runGit(['stash', 'pop'])
+        self.repo.actionInfo = 'Stash pop: '
 
         if result['exitCode']:
             self.repo.actionInfo += 'Failed'
