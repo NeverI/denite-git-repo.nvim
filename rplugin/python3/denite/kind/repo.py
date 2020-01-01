@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch' ]
-        self.redraw_actions = [ 'fetch']
+        self.persist_actions = [ 'open', 'fetch', 'rebase' ]
+        self.redraw_actions = [ 'fetch', 'rebase' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -27,6 +27,11 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.fetch()
+
+    def action_rebase(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.rebase()
 
 class RepoAction():
     def __init__(self, repo, vim):
@@ -58,3 +63,15 @@ class RepoAction():
             news.append(branch)
 
         self.repo.actionInfo += ', '.join(news)
+        self.repo.refreshStatus()
+
+    def rebase(self):
+        result = self.repo._runGit(['rebase'])
+        self.repo.refreshStatus()
+        self.repo.actionInfo = 'Rebase: '
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
