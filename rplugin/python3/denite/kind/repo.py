@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log' ]
-        self.redraw_actions = [ 'fetch', 'rebase' ]
+        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push' ]
+        self.redraw_actions = [ 'fetch', 'rebase', 'push' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -36,6 +36,11 @@ class Kind(Base):
     def action_show_log(self, context):
         for target in context['targets']:
             debug(self.vim, '\n'.join(target['action__repo'].logs))
+
+    def action_push(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.push()
 
 class RepoAction():
     def __init__(self, repo, vim):
@@ -79,3 +84,14 @@ class RepoAction():
             return
 
         self.repo.actionInfo += 'Success'
+
+    def push(self):
+        result = self.repo._runGit(['push'])
+        self.repo.actionInfo = 'Push: '
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
