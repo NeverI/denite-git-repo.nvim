@@ -21,7 +21,7 @@ class Source(Base):
     def __init__(self, vim):
         super().__init__(vim)
 
-        self.kind = 'word'
+        self.kind = 'gitrepo'
         self.name = 'git/repo'
         self.matchers = [ 'matcher/regexp' ]
         self.repos = []
@@ -63,6 +63,7 @@ class Source(Base):
 
     def _convert(self, repo):
         return {
+                'action__path': repo.path,
                 'word': repo.name,
                 'abbr': '{}{}{}{}: {} {}'.format(
                         repo.branch,
