@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop' ]
-        self.redraw_actions = [ 'fetch', 'rebase', 'push', 'stash', 'stash_pop' ]
+        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
+        self.redraw_actions = [ 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -52,22 +52,39 @@ class Kind(Base):
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.stashPop()
 
+    def action_fetch_rebase(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.fetchRebase()
+
 class RepoAction():
     def __init__(self, repo, vim):
         self.vim = vim
         self.repo = repo
 
     def fetch(self):
-        result = self.repo._runGit(['fetch'])
+        news = self._doFetch()
         self.repo.actionInfo = 'Fetch: '
 
-        if result['exitCode']:
+        if news is None:
             self.repo.actionInfo += 'Failed'
             return
 
-        if len(result['stderr']) is 0:
+        if len(news) is 0:
             self.repo.actionInfo += 'Nothing new'
             return
+
+        self.repo.actionInfo += ', '.join(news)
+        self.repo.refreshStatus()
+
+    def _doFetch(self):
+        result = self.repo._runGit(['fetch'])
+
+        if result['exitCode']:
+            return None
+
+        if len(result['stderr']) is 0:
+            return []
 
         news = []
         for line in result['stderr']:
@@ -81,8 +98,7 @@ class RepoAction():
 
             news.append(branch)
 
-        self.repo.actionInfo += ', '.join(news)
-        self.repo.refreshStatus()
+        return news
 
     def rebase(self):
         result = self.repo._runGit(['rebase'])
@@ -126,4 +142,36 @@ class RepoAction():
             return
 
         self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
+
+    def fetchRebase(self):
+        news = self._doFetch()
+        self.repo.actionInfo = 'FetchRebase:'
+
+        if news is None:
+            self.repo.actionInfo += 'fetch Failed'
+            return
+
+        if len(news) is 0:
+            self.repo.actionInfo += ' Nothing new'
+            return
+
+        if self.repo.isDirty:
+            self.repo._runGit(['stash'])
+            self.repo.actionInfo += ' stashed;'
+
+        rebaseResult = self.repo._runGit(['rebase'])
+        if rebaseResult['exitCode']:
+            self.repo.actionInfo += ' rebase Failed'
+            self.repo.refreshStatus()
+            return
+
+        if self.repo.isDirty:
+            stashPopResult = self.repo._runGit(['stash', 'pop'])
+            if stashPopResult['exitCode']:
+                self.repo.actionInfo = 'FetchRebase: rebase Success; stash pop Failed'
+                self.repo.refreshStatus()
+                return
+
+        self.repo.actionInfo = 'FetchRebase: ' + ','.join(news) + ' Success'
         self.repo.refreshStatus()
