@@ -63,9 +63,9 @@ class Source(Base):
 
     def _convert(self, repo):
         return {
-                'action__path': repo.path,
+                'action__repo': repo,
                 'word': repo.name,
-                'abbr': '{}{}{}{}: {} {}'.format(
+                'abbr': '{}{}{}{}{}: {} {}'.format(
                         repo.branch,
                         '±' if repo.isDirty else '',
                         '+' if repo.hasStash else '',
