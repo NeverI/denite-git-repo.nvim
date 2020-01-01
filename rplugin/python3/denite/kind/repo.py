@@ -9,19 +9,33 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
+        self.persist_actions = [ 'open', 'status', 'history', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
         self.redraw_actions = [ 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
 
     def action_open(self, context):
         for target in context['targets']:
             repo = target['action__repo']
-            self.vim.command('silent tabedit ' + os.path.join(repo.path, 'git_repo'))
-            bufvars = self.vim.current.buffer.options
-            bufvars['buftype'] = 'nofile'
-            bufnr =  self.vim.current.buffer.number
-            self.vim.command('cd ' + repo.path)
-            self.vim.command('Gstatus')
-            self.vim.command(f"bdelete {bufnr}")
+            if repo.isDirty or repo.actionInfo.find('Failed') > -1:
+                self._runInTab(repo, 'Gstatus')
+            else:
+                self._runInTab(repo, 'GV')
+
+    def action_status(self, context):
+        for target in context['targets']:
+            self._runInTab(target['action__repo'], 'Gstatus')
+
+    def _runInTab(self, repo, command):
+        self.vim.command('silent tabedit ' + os.path.join(repo.path, 'git_repo'))
+        bufvars = self.vim.current.buffer.options
+        bufvars['buftype'] = 'nofile'
+        bufnr =  self.vim.current.buffer.number
+        self.vim.command('silent lcd ' + repo.path)
+        self.vim.command(command)
+        self.vim.command(f"bdelete {bufnr}")
+
+    def action_history(self, context):
+        for target in context['targets']:
+            self._runInTab(target['action__repo'], 'GV')
 
     def action_fetch(self, context):
         for target in context['targets']:
@@ -149,7 +163,7 @@ class RepoAction():
         self.repo.actionInfo = 'FetchRebase:'
 
         if news is None:
-            self.repo.actionInfo += 'fetch Failed'
+            self.repo.actionInfo += ' fetch Failed'
             return
 
         if len(news) is 0:
