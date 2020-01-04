@@ -111,8 +111,11 @@ class RepoAction():
         self.repo = repo
 
     def runGit(self, command):
-        result = self.repo._runGit(command.split(' '))
         self.repo.actionInfo = f"Git: {command} "
+        self._runSimpleCommand(command.split(' '))
+
+    def _runSimpleCommand(self, command):
+        result = self.repo._runGit(command)
 
         if result['exitCode']:
             self.repo.actionInfo += 'Failed'
@@ -160,59 +163,24 @@ class RepoAction():
         return news
 
     def rebase(self):
-        result = self.repo._runGit(['rebase'])
-        self.repo.refreshStatus()
         self.repo.actionInfo = 'Rebase: '
-
-        if result['exitCode']:
-            self.repo.actionInfo += 'Failed'
-            return
-
-        self.repo.actionInfo += 'Success'
+        self._runSimpleCommand(['rebase'])
 
     def push(self):
-        result = self.repo._runGit(['push'])
         self.repo.actionInfo = 'Push: '
-
-        if result['exitCode']:
-            self.repo.actionInfo += 'Failed'
-            return
-
-        self.repo.actionInfo += 'Success'
-        self.repo.refreshStatus()
+        self._runSimpleCommand(['push'])
 
     def stash(self):
-        result = self.repo._runGit(['stash'])
         self.repo.actionInfo = 'Stash: '
-
-        if result['exitCode']:
-            self.repo.actionInfo += 'Failed'
-            return
-
-        self.repo.actionInfo += 'Success'
-        self.repo.refreshStatus()
+        self._runSimpleCommand(['stash'])
 
     def stashPop(self):
-        result = self.repo._runGit(['stash', 'pop'])
         self.repo.actionInfo = 'Stash pop: '
-
-        if result['exitCode']:
-            self.repo.actionInfo += 'Failed'
-            return
-
-        self.repo.actionInfo += 'Success'
-        self.repo.refreshStatus()
+        self._runSimpleCommand(['stash', 'pop'])
 
     def checkout(self, branch):
-        result = self.repo._runGit(['checkout', branch])
         self.repo.actionInfo = 'Checkout: '
-
-        if result['exitCode']:
-            self.repo.actionInfo += 'Failed'
-            return
-
-        self.repo.actionInfo += 'Success'
-        self.repo.refreshStatus()
+        self._runSimpleCommand(['checkout', branch])
 
     def fetchRebase(self):
         news = self._doFetch()
