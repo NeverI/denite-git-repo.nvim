@@ -9,8 +9,17 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'status', 'history', 'git', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'checkout', 'fetch_rebase' ]
-        self.redraw_actions = [ 'git', 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'checkout', 'fetch_rebase' ]
+        self.persist_actions = [
+                'open', 'status', 'history',
+                'git', 'fetch', 'rebase', 'show_log',
+                'push', 'stash', 'stash_pop',
+                'checkout', 'checkout_smart_b', 'fetch_rebase',
+            ]
+        self.redraw_actions = [
+                'git', 'fetch', 'rebase',
+                'push', 'stash', 'stash_pop',
+                'checkout', 'checkout_smart_b', 'fetch_rebase',
+            ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -88,17 +97,41 @@ class Kind(Base):
                 if branch not in branches[repoName]:
                     mostBranches.remove(branch)
 
-        mostBranches.sort()
-        self.vim.call('denite_git_repo#setBranches', mostBranches)
-        branch = self.vim.call('input', 'Branch: ', '',
-                'customlist,denite_git_repo#autocompleteBranches')
-
+        branch = self._inputBranch(mostBranches)
         if not branch:
             return
 
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.checkout(branch)
+
+    def _inputBranch(self, branches):
+        branches.sort()
+        self.vim.call('denite_git_repo#setBranches', branches)
+
+        return self.vim.call('input', 'Branch: ', '',
+                'customlist,denite_git_repo#autocompleteBranches')
+
+    def action_checkout_smart_b(self, context):
+        branches = []
+        branchesInRepo = {}
+        for target in context['targets']:
+            repo = target['action__repo']
+            branchesInRepo[repo.name] = repo.getBranches()
+            for branch in branchesInRepo[repo.name]:
+                if branch not in branches:
+                    branches.append(branch)
+
+        branch = self._inputBranch(branches)
+        if not branch:
+            return
+
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            if branch in branchesInRepo[repoAction.repo.name]:
+                repoAction.checkout(branch)
+            else:
+                repoAction.checkoutB(branch)
 
     def action_fetch_rebase(self, context):
         for target in context['targets']:
@@ -181,6 +214,10 @@ class RepoAction():
     def checkout(self, branch):
         self.repo.actionInfo = 'Checkout: '
         self._runSimpleCommand(['checkout', branch])
+
+    def checkoutB(self, branch):
+        self.repo.actionInfo = 'CheckoutB: '
+        self._runSimpleCommand(['checkout', '-b', branch])
 
     def fetchRebase(self):
         news = self._doFetch()
