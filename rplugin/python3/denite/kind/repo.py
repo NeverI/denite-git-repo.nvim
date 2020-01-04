@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'status', 'history', 'git', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
-        self.redraw_actions = [ 'git', 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
+        self.persist_actions = [ 'open', 'status', 'history', 'git', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'checkout', 'fetch_rebase' ]
+        self.redraw_actions = [ 'git', 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'checkout', 'fetch_rebase' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -72,6 +72,33 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.stashPop()
+
+    def action_checkout(self, context):
+        branches = {}
+        mostBranches = []
+        for target in context['targets']:
+            repo = target['action__repo']
+            branchesInRepo = repo.getBranches()
+            branches[repo.name] = branchesInRepo
+            if len(branchesInRepo) > len(mostBranches):
+                mostBranches = branchesInRepo
+
+        for repoName in branches:
+            for branch in mostBranches.copy():
+                if branch not in branches[repoName]:
+                    mostBranches.remove(branch)
+
+        mostBranches.sort()
+        self.vim.call('denite_git_repo#setBranches', mostBranches)
+        branch = self.vim.call('input', 'Branch: ', '',
+                'customlist,denite_git_repo#autocompleteBranches')
+
+        if not branch:
+            return
+
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.checkout(branch)
 
     def action_fetch_rebase(self, context):
         for target in context['targets']:
@@ -168,6 +195,17 @@ class RepoAction():
     def stashPop(self):
         result = self.repo._runGit(['stash', 'pop'])
         self.repo.actionInfo = 'Stash pop: '
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
+
+    def checkout(self, branch):
+        result = self.repo._runGit(['checkout', branch])
+        self.repo.actionInfo = 'Checkout: '
 
         if result['exitCode']:
             self.repo.actionInfo += 'Failed'

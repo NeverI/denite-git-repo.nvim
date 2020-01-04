@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 from denite.base.source import Base
 from denite.util import debug, error
@@ -190,3 +191,13 @@ class Repo():
             'stdout': stdout,
             'stderr': stderr,
             }
+
+    def getBranches(self):
+        result = self._runGit(['branch', '--list', '--no-color'])
+        branches = []
+        for line in result['stdout']:
+            branch = re.search(r'\s([\w\-\.]+)', line)
+            if branch:
+                branches.append(branch.group(1))
+
+        return branches
