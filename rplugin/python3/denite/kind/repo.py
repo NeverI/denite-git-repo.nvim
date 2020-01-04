@@ -9,8 +9,8 @@ class Kind(Base):
 
         self.name = 'gitrepo'
         self.default_action = 'open'
-        self.persist_actions = [ 'open', 'status', 'history', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
-        self.redraw_actions = [ 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
+        self.persist_actions = [ 'open', 'status', 'history', 'git', 'fetch', 'rebase', 'show_log', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
+        self.redraw_actions = [ 'git', 'fetch', 'rebase', 'push', 'stash', 'stash_pop', 'fetch_rebase' ]
 
     def action_open(self, context):
         for target in context['targets']:
@@ -36,6 +36,13 @@ class Kind(Base):
     def action_history(self, context):
         for target in context['targets']:
             self._runInTab(target['action__repo'], 'GV')
+
+    def action_git(self, context):
+        command = self.vim.call('input', 'git ')
+
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.runGit(command)
 
     def action_fetch(self, context):
         for target in context['targets']:
@@ -75,6 +82,17 @@ class RepoAction():
     def __init__(self, repo, vim):
         self.vim = vim
         self.repo = repo
+
+    def runGit(self, command):
+        result = self.repo._runGit(command.split(' '))
+        self.repo.actionInfo = f"Git: {command} "
+
+        if result['exitCode']:
+            self.repo.actionInfo += 'Failed'
+            return
+
+        self.repo.actionInfo += 'Success'
+        self.repo.refreshStatus()
 
     def fetch(self):
         news = self._doFetch()
