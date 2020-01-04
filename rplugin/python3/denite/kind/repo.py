@@ -14,11 +14,13 @@ class Kind(Base):
                 'git', 'fetch', 'rebase', 'show_log',
                 'push', 'stash', 'stash_pop',
                 'checkout', 'checkout_smart_b', 'fetch_rebase',
+                'git_show_output',
             ]
         self.redraw_actions = [
                 'git', 'fetch', 'rebase',
                 'push', 'stash', 'stash_pop',
                 'checkout', 'checkout_smart_b', 'fetch_rebase',
+                'git_show_output',
             ]
 
     def action_open(self, context):
@@ -53,6 +55,31 @@ class Kind(Base):
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.runGit(command)
 
+    def action_git_show_output(self, context):
+        command = self.vim.call('input', 'git! ')
+
+        for target in context['targets']:
+            repo = target['action__repo']
+            repoAction = RepoAction(repo, self.vim)
+            result = repoAction.runGit(command)
+
+            self.vim.out_write(' \n')
+            self.vim.out_write(repo.path + ':\n')
+            if len(result['stdout']):
+                self.vim.out_write('  stdout:\n')
+                self.vim.out_write('    ')
+                self.vim.out_write('\n    '.join(result['stdout']))
+                self.vim.out_write(' \n')
+            if len(result['stderr']):
+                self.vim.out_write('  stderr:\n')
+                self.vim.out_write('    ')
+                self.vim.out_write('\n    '.join(result['stderr']))
+                self.vim.out_write(' \n')
+
+    def action_show_log(self, context):
+        for target in context['targets']:
+            self.vim.out_write('\n'.join(target['action__repo'].logs))
+
     def action_fetch(self, context):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
@@ -62,10 +89,6 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.rebase()
-
-    def action_show_log(self, context):
-        for target in context['targets']:
-            debug(self.vim, '\n'.join(target['action__repo'].logs))
 
     def action_push(self, context):
         for target in context['targets']:
@@ -145,7 +168,7 @@ class RepoAction():
 
     def runGit(self, command):
         self.repo.actionInfo = f"Git: {command} "
-        self._runSimpleCommand(command.split(' '))
+        return self._runSimpleCommand(command.split(' '))
 
     def _runSimpleCommand(self, command):
         result = self.repo._runGit(command)
@@ -156,6 +179,8 @@ class RepoAction():
 
         self.repo.actionInfo += 'Success'
         self.repo.refreshStatus()
+
+        return result
 
     def fetch(self):
         news = self._doFetch()
