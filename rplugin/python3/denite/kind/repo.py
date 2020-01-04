@@ -12,12 +12,12 @@ class Kind(Base):
         self.persist_actions = [
                 'open', 'status', 'history',
                 'git', 'fetch', 'rebase', 'show_log',
-                'push', 'stash', 'stash_pop',
+                'push', 'pull', 'stash', 'stash_pop',
                 'checkout', 'checkout_smart_b', 'fetch_rebase',
                 'git_show_output',
             ]
         self.redraw_actions = [
-                'git', 'fetch', 'rebase',
+                'git', 'fetch', 'rebase', 'pull',
                 'push', 'stash', 'stash_pop',
                 'checkout', 'checkout_smart_b', 'fetch_rebase',
                 'git_show_output',
@@ -89,6 +89,11 @@ class Kind(Base):
         for target in context['targets']:
             repoAction = RepoAction(target['action__repo'], self.vim)
             repoAction.rebase()
+
+    def action_pull(self, context):
+        for target in context['targets']:
+            repoAction = RepoAction(target['action__repo'], self.vim)
+            repoAction.pull()
 
     def action_push(self, context):
         for target in context['targets']:
@@ -223,6 +228,10 @@ class RepoAction():
     def rebase(self):
         self.repo.actionInfo = 'Rebase: '
         self._runSimpleCommand(['rebase'])
+
+    def pull(self):
+        self.repo.actionInfo = 'Pull: '
+        self._runSimpleCommand(['pull'])
 
     def push(self):
         self.repo.actionInfo = 'Push: '
