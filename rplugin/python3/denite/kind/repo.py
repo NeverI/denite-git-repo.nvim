@@ -180,7 +180,7 @@ class RepoAction():
 
         if result['exitCode']:
             self.repo.actionInfo += 'Failed'
-            return
+            return result
 
         self.repo.actionInfo += 'Success'
         self.repo.refreshStatus()
