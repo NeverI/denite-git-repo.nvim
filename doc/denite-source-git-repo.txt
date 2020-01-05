@@ -1,0 +1,208 @@
+*denite-source-source-git/repo.txt* Multiple git repository source for |Denite|
+
+Version: 1.0
+Author:  Nevi <https://github.com/NeverI>
+License: MIT license
+
+CONTENTS                                       *denite-source-git/repo-contents*
+
+Introduction                               |denite-source-git/repo-introduction|
+Usage                                      |denite-source-git/repo-usage|
+Actions                                    |denite-source-git/repo-actions|
+Bugs                                       |denite-source-git/repo-bugs|
+Contributing                               |denite-source-git/repo-contributing|
+
+==============================================================================
+INTRODUCTION                               *denite-source-git/repo-introduction*
+
+My projects usually involves many git repository and I have to handle a lot of
+them at the same time (at least get the new patches).
+
+So I wanted to write something to help me out without leaving vim and I
+realized the git repos would be a perfect source for |Denite| even if my
+python knowledge is under the frog's butt.
+
+Just fire up |Denite|
+
+  `:Denite git/repo`
+
+and it will collect all the git repos from the current working directory until
+the first git repo from any sub directory. If the cwd is a git repo then you
+got only one repository in the source list.
+
+Example for a |Denite| line:
+
+  `#origin/master<->master±+* [ahead 3 behind 1]: MyProject Fetch: master, awesome-feature`
+
+Until the first ':' you got a compressed git status based on the git status
+--porcelain --branch output. Just the local and remote branch name swapped.
+The ± mark indicate that your repo is dirty
+The + sign give you hint that you have some stashed code
+The * sign and it says you have untracked files
+
+The next string is the directory name which has a .git folder.
+
+The last part is the action output. Starting with the action's name and
+followed by the result. For example you got new patches on the master and the
+awesome-feature branches.
+
+I tried to create a very seamless work flow, so the status action is depend on
+the <tpope/vim-fugitive> plugin and the history action is depend on
+<junegunn/gv.vim> plugin. If you use something else for these purpose (why
+would you?:) then contact me.
+
+==============================================================================
+USAGE                                             *denite-source-git/repo-usage*
+
+The source can get two arguments.
+
+  * The first one is the starting directory, relative from the current working
+    directory or an absolute path
+  * The second is the searching depth which is 5 by default
+
+In the following directory structure you can gather the repos like these:
+>
+  | MyProject
+    | app
+    | src
+    | .git
+    | vendor
+      | awesome
+        | feature1
+          | .git
+        | feature2
+          | .git
+      | awesome
+        | feature3
+          | secondVendor
+            | feature4
+              | .git
+
+  :Denite git/repo
+    " gather repos: MyProject
+
+  :Denite git/repo:vendor
+    " gather repos: feature1, feature2, feature4
+
+  :Denite git/repo:vendor:1
+    " gather repos: nothing, beacuse the depth restriction
+
+  :Denite -source-names=hide git/repo git/repo:vendor/awesome
+    " gather repos: MyProject, feature1, feature2
+>
+
+Useful Denite mappings for the usage:
+>
+  nnoremap <silent><buffer><expr> a denite#do_map('choose_action')
+  nnoremap <silent><buffer><expr> <C-a> denite#do_map('toggle_select_all')
+  nnoremap <silent><buffer><expr> <C-r> denite#do_map('restart')
+  nnoremap <silent><buffer><expr> <Space> denite#do_map('toggle_select').'j'
+<
+Filtering is done by the directory name.
+
+==============================================================================
+ACTIONS                                         *denite-source-git/repo-actions*
+
+<push>: alias for `git push`
+  Available outputs:
+    * Failed
+    * Success
+
+<stash>: alias for `git stash`
+  Available outputs:
+    * Failed
+    * Success
+
+<stash_pop>: alias for `git stash pop`
+  Available outputs:
+    * Failed
+    * Success
+
+<pull>: alias for `git pull`
+  Available outputs:
+    * Failed
+    * Success
+  Note: I prefer to use the fetch - rebase so maybe this could be better
+
+<fetch>: alias for `git fetch`
+  Available outputs:
+    * Failed
+    * Nothing new
+    * comma separated list for the updated things with a * mark at the end if it
+      is a new thing
+
+<rebase>: alias for `git rebase`
+  Available outputs:
+    * Failed
+    * Success
+
+<checkout>: alias for `git checkout <branchname>`
+  The input field has an autocomplete for the common branches from all
+    selected repos
+  Available outputs:
+    * Failed
+    * Success
+
+<checkout_smart_b>:
+  The input field has an autocomplete for all branches from all selected repos
+  If the selected repo has the branch then
+  call `git checkout` otherwise call a `git checkout -b`
+  Available outputs:
+    * Failed
+    * Success
+
+<show_log>:
+  If a git command exit with a none zero exit code (so the action status display Failed)
+  then the stdout, stderr is stored for that repo until the denite buffer is
+  closed.
+  With this actions you can check the outputs
+
+<git>:
+  You can run any git command on the selected repos
+  Available outputs:
+    * Failed
+    * Success
+
+<git_show_output>:
+  Same as above but the stdout, stderr always displayed
+  Available outputs:
+    * Failed
+    * Success
+
+<fetch_rebase>:
+  First call `fetch`,
+  if there is new data then checks the repo state,
+    if it is dirty the call `stash`,
+  then call `rebase`
+    if the stash was called the call a `stash pop`
+  Available outputs:
+    * fetch Failed
+    * Nothing new
+    * rebase Failed
+    * stashed; rebase Failed
+    * rebase Success; stash pop Failed
+    * comma separated list with the end of Success
+
+<status>:
+  Open a new `Gstatus` in new tab with a cwd setted to the selected repo
+
+<history>:
+  Open a new `GV` in new tab with a cwd setted to the selected repo
+
+<open>:
+  If the repo is clean and does not have a Failed action
+  then it works like the <history> action otherwise it is a <status> action
+
+==============================================================================
+BUGS                                               *denite-source-git/repo-bugs*
+
+If you find a bug please post it on the issue tracker:
+
+https://github.com/NeverI/denite-source-git/repo.nvim/issues
+
+==============================================================================
+CONTRIBUTING                               *denite-source-git/repo-contributing*
+
+Think you can make this plugin better? Awesome! Fork it GitHub and send a pull request.
+
+https://github.com/NeverI/denite-source-git/repo.nvim
