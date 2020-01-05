@@ -30,12 +30,10 @@ class Source(Base):
         self.repos = []
 
     def define_syntax(self):
-        self.vim.command(f"syntax region {self.syntax_name}_branch start=/^../hs=e end=/: / " +
+        self.vim.command(f"syntax region {self.syntax_name}_branch start=/>/ start=/#/ end=/: / " +
                 f"containedin={self.syntax_name} " +
-                f"contains=deniteConcealedMark nextgroup={self.syntax_name}_repo")
+                f"nextgroup={self.syntax_name}_repo")
         self.vim.command(f"highlight default link {self.syntax_name}_branch Comment")
-        self.vim.command('syntax match deniteSelectedLine /^[*].*/' +
-                           ' contains=deniteConcealedMark')
         for syntax in self.hightlightGroups:
             self.vim.command(
                 'syntax match {0}_{1} /{2}/ contained containedin={3} {4}'.format(
@@ -146,7 +144,7 @@ class Repo():
             self.branch = '>' + branch[0]
         else:
             branch.reverse()
-            self.branch = '<->'.join(branch)
+            self.branch = '#' + ('<->'.join(branch))
 
         self.branchInfo = ' '.join(branchLine)
 
