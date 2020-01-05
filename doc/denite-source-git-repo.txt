@@ -79,16 +79,16 @@ In the following directory structure you can gather the repos like these:
               | .git
 
   :Denite git/repo
-    " gather repos: MyProject
+    " found repos: MyProject
 
   :Denite git/repo:vendor
-    " gather repos: feature1, feature2, feature4
+    " found repos: feature1, feature2, feature4
 
   :Denite git/repo:vendor:1
-    " gather repos: nothing, beacuse the depth restriction
+    " found repos: nothing, beacuse the depth restriction
 
   :Denite -source-names=hide git/repo git/repo:vendor/awesome
-    " gather repos: MyProject, feature1, feature2
+    " found repos: MyProject, feature1, feature2
 >
 
 Useful Denite mappings for the usage:
