@@ -19,6 +19,7 @@ class Source(Base):
         {'name': 'status', 'link': 'Constant', 'parent': 'action', 'pattern': r': \zs.\+$'},
         {'name': 'statusFailed', 'link': 'Exception', 'parent': 'status', 'pattern': r'Failed'},
         {'name': 'statusSuccess', 'link': 'String', 'parent': 'status', 'pattern': r'Success'},
+        {'name': 'statusNothing', 'link': 'Comment', 'parent': 'status', 'pattern': r'Nothing .\+'},
     ]
 
     def __init__(self, vim):
