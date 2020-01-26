@@ -175,11 +175,15 @@ class RepoAction():
         self.repo.actionInfo = f"Git: {command} "
         return self._runSimpleCommand(command.split(' '))
 
-    def _runSimpleCommand(self, command):
+    def _runSimpleCommand(self, command, nothingStd='stdout', nothingPattern=r'up[-\s]to[-\s]date'):
         result = self.repo._runGit(command)
 
         if result['exitCode']:
             self.repo.actionInfo += 'Failed'
+            return result
+
+        if len(result[nothingStd]) is 1 and re.search(nothingPattern, result[nothingStd][0]):
+            self.repo.actionInfo += 'Nothing to ' + command[0]
             return result
 
         self.repo.actionInfo += 'Success'
@@ -235,11 +239,11 @@ class RepoAction():
 
     def push(self):
         self.repo.actionInfo = 'Push: '
-        self._runSimpleCommand(['push'])
+        self._runSimpleCommand(['push'], 'stderr')
 
     def stash(self):
         self.repo.actionInfo = 'Stash: '
-        self._runSimpleCommand(['stash'])
+        self._runSimpleCommand(['stash'], 'stdout', r'No local')
 
     def stashPop(self):
         self.repo.actionInfo = 'Stash pop: '
